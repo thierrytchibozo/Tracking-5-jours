@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking 5 jours - Cartographie des tâches</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab:hover {
+            background-color: #e9ecef;
+        }
+        
+        .tab.active {
+            background-color: white;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tracking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 12px;
+        }
+        
+        .tracking-table th,
+        .tracking-table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        
+        .tracking-table th {
+            background-color: #667eea;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        .tracking-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .tracking-table tr:hover {
+            background-color: #e3f2fd;
+        }
+        
+        .category-production { background-color: #e8f5e8 !important; }
+        .category-vente { background-color: #fff3e0 !important; }
+        .category-communication { background-color: #e3f2fd !important; }
+        .category-admin { background-color: #fce4ec !important; }
+        .category-veille { background-color: #f3e5f5 !important; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-placeholder {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .input-group {
+            margin: 10px 0;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+        
+        .alert-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .alert-success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .score-high { color: #28a745; font-weight: bold; }
+        .score-medium { color: #fd7e14; font-weight: bold; }
+        .score-low { color: #dc3545; font-weight: bold; }
+        
+        .timer-display {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+            color: #667eea;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+        
+        @media (max-width: 768px) {
+            .tracking-table {
+                font-size: 10px;
+            }
+            
+            .tracking-table th,
+            .tracking-table td {
+                padding: 4px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Tracking 5 jours - Cartographie des tâches</h1>
+            <p>Outil de chronométrage automatique pour identifier précisément où tu perds ton temps</p>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('saisie')">🕐 Saisie des tâches</button>
+            <button class="tab" onclick="showTab('analyse')">📈 Analyse quotidienne</button>
+            <button class="tab" onclick="showTab('graphiques')">📊 Graphiques</button>
+            <button class="tab" onclick="showTab('synthese')">🎯 Synthèse 5 jours</button>
+            <button class="tab" onclick="showTab('instructions')">📋 Instructions</button>
+        </div>
+        
+        <!-- Onglet Saisie des tâches -->
+        <div id="saisie" class="tab-content active">
+            <h2>⏱️ Saisie en temps réel</h2>
+            
+            <div class="timer-display" id="currentTime">--:--</div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <div class="input-group">
+                        <label for="jour">Jour de suivi</label>
+                        <select id="jour">
+                            <option value="jour1">Jour 1 (Lundi)</option>
+                            <option value="jour2">Jour 2 (Mardi)</option>
+                            <option value="jour3">Jour 3 (Mercredi)</option>
+                            <option value="jour4">Jour 4 (Jeudi)</option>
+                            <option value="jour5">Jour 5 (Vendredi)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="heure">Heure de début</label>
+                        <input type="time" id="heure" value="">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="tache">Tâche effectuée</label>
+                        <input type="text" id="tache" placeholder="Ex: Réponse emails clients">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="duree">Durée (minutes)</label>
+                        <input type="number" id="duree" placeholder="Ex: 25" min="1">
+                    </div>
+                </div>
+                
+                <div>
+                    <div class="input-group">
+                        <label for="categorie">Catégorie</label>
+                        <select id="categorie">
+                            <option value="production">🎯 Production (Création livrables clients)</option>
+                            <option value="vente">💼 Vente (Prospection, négociation)</option>
+                            <option value="communication">📧 Communication (Emails, calls, réunions)</option>
+                            <option value="admin">📁 Admin (Compta, facturation, juridique)</option>
+                            <option value="veille">📚 Veille (Formation, recherche)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="impact">Impact sur CA</label>
+                        <select id="impact">
+                            <option value="fort">🔥 Fort - Génère directement du revenus</option>
+                            <option value="moyen">⚡ Moyen - Contribue indirectement</option>
+                            <option value="faible">💤 Faible - Nécessaire mais sans impact mesurable</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="energie">Niveau d'énergie</label>
+                        <select id="energie">
+                            <option value="energisant">⚡ Énergisant - J'ai envie, ça me donne de la force</option>
+                            <option value="neutre">➖ Neutre - Ni plaisant ni déplaisant</option>
+                            <option value="drainant">🔋 Drainant - Ça me fatigue, je procrastine</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="delegabilite">Délégabilité</label>
+                        <select id="delegabilite">
+                            <option value="impossible">🔒 Impossible à déléguer</option>
+                            <option value="difficile">⚠️ Difficile à déléguer</option>
+                            <option value="facile">✅ Facile à déléguer</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin: 20px 0; text-align: center;">
+                <button class="btn" onclick="ajouterTache()">➕ Ajouter cette tâche</button>
+                <button class="btn btn-secondary" onclick="demarrerTimer()">⏰ Démarrer chrono 30min</button>
+            </div>
+            
+            <div class="alert alert-warning">
+                <strong>⚠️ Rappel :</strong> Configure un timer qui sonne toutes les 30 minutes. À chaque sonnerie, note ce que tu faisais dans les 30 dernières minutes.
+            </div>
+        </div>
+        
+        <!-- Onglet Analyse quotidienne -->
+        <div id="analyse" class="tab-content">
+            <h2>📊 Analyse quotidienne</h2>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total heures travaillées</div>
+                    <div class="stat-value" id="totalHeures">0h</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">% Production + Vente</div>
+                    <div class="stat-value" id="prodVentePercent">0%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">% Communication + Admin</div>
+                    <div class="stat-value" id="commAdminPercent">0%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Score moyen des tâches</div>
+                    <div class="stat-value" id="scoreMoyen">0</div>
+                </div>
+            </div>
+            
+            <table class="tracking-table" id="tableauTaches">
+                <thead>
+                    <tr>
+                        <th>Heure</th>
+                        <th>Tâche</th>
+                        <th>Durée</th>
+                        <th>Catégorie</th>
+                        <th>Impact CA</th>
+                        <th>Énergie</th>
+                        <th>Délégabilité</th>
+                        <th>Score</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Les tâches s'ajouteront automatiquement ici -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Onglet Graphiques -->
+        <div id="graphiques" class="tab-content">
+            <h2>📈 Visualisation des données</h2>
+            
+            <div class="chart-container">
+                <canvas id="repartitionChart" width="400" height="300"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="evolutionChart" width="400" height="300"></canvas>
+            </div>
+            
+            <div class="chart-container">
+                <canvas id="scoreChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+        
+        <!-- Onglet Synthèse -->
+        <div id="synthese" class="tab-content">
+            <h2>🎯 Synthèse des 5 jours</h2>
+            
+            <div class="alert alert-success">
+                <strong>✅ Objectif :</strong> Identifier tes 10 tâches avec le score le plus BAS (candidats automatisation) et tes 5 tâches avec le score le plus HAUT (70% de ton temps).
+            </div>
+            
+            <h3>🔻 TOP 10 - Tâches à automatiser/déléguer (scores les plus bas)</h3>
+            <table class="tracking-table" id="top10Bas">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Tâche</th>
+                        <th>Temps total/semaine</th>
+                        <th>Score</th>
+                        <th>Recommandation</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sera rempli automatiquement -->
+                </tbody>
+            </table>
+            
+            <h3>🔺 TOP 5 - Tâches à privilégier (scores les plus hauts)</h3>
+            <table class="tracking-table" id="top5Haut">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Tâche</th>
+                        <th>Temps total/semaine</th>
+                        <th>Score</th>
+                        <th>% temps idéal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sera rempli automatiquement -->
+                </tbody>
+            </table>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Temps total LOW-VALUE</div>
+                    <div class="stat-value" id="tempsLowValue">0h</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Temps total HIGH-VALUE</div>
+                    <div class="stat-value" id="tempsHighValue">0h</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Potentiel gain/semaine</div>
+                    <div class="stat-value" id="potentielGain">0h</div>
+                </div>
+                
+                <div class="stat-card">
+                    <div class="stat-label">Profil dominant</div>
+                    <div class="stat-value" id="profilDominant">-</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Onglet Instructions -->
+        <div id="instructions" class="tab-content">
+            <h2>📋 Mode d'emploi du tracker</h2>
+            
+            <div class="alert alert-warning">
+                <strong>🎯 OBJECTIF :</strong> Mesurer la réalité de ton usage du temps, pas tes impressions.
+            </div>
+            
+            <h3>⚙️ Configuration initiale</h3>
+            <ol>
+                <li><strong>Configure un timer</strong> qui sonne toutes les 30 minutes durant tes heures de travail</li>
+                <li><strong>Prépare ce tracker</strong> ouvert dans un onglet de ton navigateur</li>
+                <li><strong>Commence lundi matin</strong> dès ta première tâche professionnelle</li>
+            </ol>
+            
+            <h3>📝 Utilisation quotidienne</h3>
+            <ol>
+                <li><strong>À chaque sonnerie du timer :</strong>
+                    <ul>
+                        <li>Note l'heure de début de la tâche</li>
+                        <li>Décris précisément ce que tu as fait</li>
+                        <li>Estime la durée en minutes</li>
+                        <li>Sélectionne catégorie, impact, énergie, délégabilité</li>
+                    </ul>
+                </li>
+                <li><strong>Clique "Ajouter cette tâche"</strong></li>
+                <li><strong>Recommence</strong> pour la période suivante</li>
+            </ol>
+            
+            <h3>🧮 Calcul du score de valeur</h3>
+            <p><strong>Formule :</strong> Score = (Impact CA × 3) + (Énergie × 2) - (Délégabilité × 1)</p>
+            
+            <div style="margin: 20px 0;">
+                <h4>Impact CA :</h4>
+                <ul>
+                    <li>Fort = 3 points</li>
+                    <li>Moyen = 2 points</li>
+                    <li>Faible = 1 point</li>
+                </ul>
+                
+                <h4>Énergie :</h4>
+                <ul>
+                    <li>Énergisant = 3 points</li>
+                    <li>Neutre = 2 points</li>
+                    <li>Drainant = 1 point</li>
+                </ul>
+                
+                <h4>Délégabilité :</h4>
+                <ul>
+                    <li>Impossible = 1 point</li>
+                    <li>Difficile = 2 points</li>
+                    <li>Facile = 3 points</li>
+                </ul>
+            </div>
+            
+            <h3>🎯 Interprétation des résultats</h3>
+            <ul>
+                <li><strong>Score ≥ 10 :</strong> HIGH-VALUE - Tu dois y passer 70% de ton temps</li>
+                <li><strong>Score 6-9 :</strong> MEDIUM-VALUE - À optimiser ou automatiser</li>
+                <li><strong>Score ≤ 5 :</strong> LOW-VALUE - Automatisation/délégation prioritaire</li>
+            </ul>
+            
+            <div class="alert alert-success">
+                <strong>📊 Après 5 jours :</strong> Tu auras une cartographie précise de tes voleurs d'énergie et pourras appliquer les stratégies des chapitres suivants.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let taches = JSON.parse(localStorage.getItem('taches')) || [];
+        let timerInterval = null;
+        let isTimerRunning = false;
+        
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+            afficherTaches();
+            mettreAJourStatistiques();
+            genererGraphiques();
+            genererSynthese();
+        });
+        
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        function showTab(tabName) {
+            // Masquer tous les contenus
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Désactiver tous les onglets
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Afficher le contenu sélectionné
+            document.getElementById(tabName).classList.add('active');
+            
+            // Activer l'onglet correspondant
+            event.target.classList.add('active');
+            
+            // Actualiser les données si nécessaire
+            if (tabName === 'analyse') {
+                afficherTaches();
+                mettreAJourStatistiques();
+            } else if (tabName === 'graphiques') {
+                genererGraphiques();
+            } else if (tabName === 'synthese') {
+                genererSynthese();
+            }
+        }
+        
+        function calculerScore(impact, energie, delegabilite) {
+            const impactPoints = { 'fort': 3, 'moyen': 2, 'faible': 1 };
+            const energiePoints = { 'energisant': 3, 'neutre': 2, 'drainant': 1 };
+            const delegabilitePoints = { 'impossible': 1, 'difficile': 2, 'facile': 3 };
+            
+            return (impactPoints[impact] * 3) + (energiePoints[energie] * 2) - (delegabilitePoints[delegabilite] * 1);
+        }
+        
+        function ajouterTache() {
+            const jour = document.getElementById('jour').value;
+            const heure = document.getElementById('heure').value;
+            const tache = document.getElementById('tache').value.trim();
+            const duree = parseInt(document.getElementById('duree').value);
+            const categorie = document.getElementById('categorie').value;
+            const impact = document.getElementById('impact').value;
+            const energie = document.getElementById('energie').value;
+            const delegabilite = document.getElementById('delegabilite').value;
+            
+            if (!tache || !duree || duree <= 0 || !heure) {
+                alert('Merci de remplir tous les champs obligatoires (heure, tâche, durée).');
+                return;
+            }
+            
+            const score = calculerScore(impact, energie, delegabilite);
+            
+            const nouvelleTache = {
+                id: Date.now(),
+                jour,
+                heure,
+                tache,
+                duree,
+                categorie,
+                impact,
+                energie,
+                delegabilite,
+                score,
+                timestamp: new Date().toISOString()
+            };
+            
+            taches.push(nouvelleTache);
+            localStorage.setItem('taches', JSON.stringify(taches));
+            
+            // Réinitialiser le formulaire
+            document.getElementById('tache').value = '';
+            document.getElementById('duree').value = '';
+            
+            // Mettre à jour l'heure pour la prochaine tâche
+            const maintenant = new Date();
+            maintenant.setMinutes(maintenant.getMinutes() + duree);
+            document.getElementById('heure').value = maintenant.toTimeString().slice(0, 5);
+            
+            afficherTaches();
+            mettreAJourStatistiques();
+            
+            alert('✅ Tâche ajoutée avec succès !');
+        }
+        
+        function supprimerTache(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+                taches = taches.filter(t => t.id !== id);
+                localStorage.setItem('taches', JSON.stringify(taches));
+                afficherTaches();
+                mettreAJourStatistiques();
+            }
+        }
+        
+        function afficherTaches() {
+            const tbody = document.querySelector('#tableauTaches tbody');
+            const jourActuel = document.getElementById('jour').value;
+            const tachesJour = taches.filter(t => t.jour === jourActuel);
+            
+            tbody.innerHTML = '';
+            
+            tachesJour.forEach(tache => {
+                const tr = document.createElement('tr');
+                tr.className = `category-${tache.categorie}`;
+                
+                const scoreClass = tache.score >= 10 ? 'score-high' : 
+                                 tache.score >= 6 ? 'score-medium' : 'score-low';
+                
+                tr.innerHTML = `
+                    <td>${tache.heure}</td>
+                    <td>${tache.tache}</td>
+                    <td>${tache.duree}min</td>
+                    <td>${formatCategorie(tache.categorie)}</td>
+                    <td>${formatImpact(tache.impact)}</td>
+                    <td>${formatEnergie(tache.energie)}</td>
+                    <td>${formatDelegabilite(tache.delegabilite)}</td>
+                    <td class="${scoreClass}">${tache.score}</td>
+                    <td>
+                        <button class="btn" style="padding: 4px 8px; font-size: 12px;" onclick="supprimerTache(${tache.id})">🗑️</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        function mettreAJourStatistiques() {
+            const jourActuel = document.getElementById('jour').value;
+            const tachesJour = taches.filter(t => t.jour === jourActuel);
+            
+            const totalMinutes = tachesJour.reduce((sum, t) => sum + t.duree, 0);
+            const totalHeures = Math.floor(totalMinutes / 60);
+            const totalMinutesRest = totalMinutes % 60;
+            
+            const minutesProduction = tachesJour.filter(t => t.categorie === 'production').reduce((sum, t) => sum + t.duree, 0);
+            const minutesVente = tachesJour.filter(t => t.categorie === 'vente').reduce((sum, t) => sum + t.duree, 0);
+            const minutesComm = tachesJour.filter(t => t.categorie === 'communication').reduce((sum, t) => sum + t.duree, 0);
+            const minutesAdmin = tachesJour.filter(t => t.categorie === 'admin').reduce((sum, t) => sum + t.duree, 0);
+            
+            const prodVentePercent = totalMinutes > 0 ? Math.round(((minutesProduction + minutesVente) / totalMinutes) * 100) : 0;
+            const commAdminPercent = totalMinutes > 0 ? Math.round(((minutesComm + minutesAdmin) / totalMinutes) * 100) : 0;
+            
+            const scoreMoyen = tachesJour.length > 0 ? Math.round(tachesJour.reduce((sum, t) => sum + t.score, 0) / tachesJour.length * 10) / 10 : 0;
+            
+            document.getElementById('totalHeures').textContent = `${totalHeures}h${totalMinutesRest > 0 ? totalMinutesRest + 'min' : ''}`;
+            document.getElementById('prodVentePercent').textContent = `${prodVentePercent}%`;
+            document.getElementById('commAdminPercent').textContent = `${commAdminPercent}%`;
+            document.getElementById('scoreMoyen').textContent = scoreMoyen;
+            
+            // Alerte si les seuils critiques sont atteints
+            const alertes = document.querySelectorAll('.alert-dynamic');
+            alertes.forEach(a => a.remove());
+            
+            let alerteHTML = '';
+            if (prodVentePercent < 40) {
+                alerteHTML += '<div class="alert alert-warning alert-dynamic"><strong>⚠️ ALERTE :</strong> Tu passes moins de 40% en Production + Vente. Tu risques de faire tourner une machine administrative, pas un business.</div>';
+            }
+            if (commAdminPercent > 30) {
+                alerteHTML += '<div class="alert alert-warning alert-dynamic"><strong>⚠️ ALERTE :</strong> Tu passes plus de 30% en Communication + Admin. Tu es devenu un employé de ton propre business.</div>';
+            }
+            
+            if (alerteHTML) {
+                document.getElementById('analyse').insertAdjacentHTML('afterbegin', alerteHTML);
+            }
+        }
+        
+        function formatCategorie(cat) {
+            const categories = {
+                'production': '🎯 Production',
+                'vente': '💼 Vente',
+                'communication': '📧 Communication',
+                'admin': '📁 Admin',
+                'veille': '📚 Veille'
+            };
+            return categories[cat] || cat;
+        }
+        
+        function formatImpact(impact) {
+            const impacts = {
+                'fort': '🔥 Fort',
+                'moyen': '⚡ Moyen',
+                'faible': '💤 Faible'
+            };
+            return impacts[impact] || impact;
+        }
+        
+        function formatEnergie(energie) {
+            const energies = {
+                'energisant': '⚡ Énergisant',
+                'neutre': '➖ Neutre',
+                'drainant': '🔋 Drainant'
+            };
+            return energies[energie] || energie;
+        }
+        
+        function formatDelegabilite(deleg) {
+            const delegabilites = {
+                'impossible': '🔒 Impossible',
+                'difficile': '⚠️ Difficile',
+                'facile': '✅ Facile'
+            };
+            return delegabilites[deleg] || deleg;
+        }
+        
+        function genererGraphiques() {
+            // Vérifier que l'onglet graphiques existe avant de continuer
+            const graphiquesTab = document.getElementById('graphiques');
+            if (!graphiquesTab) return;
+            
+            // Données pour les graphiques
+            const donneesCategories = {};
+            const donneesJours = {};
+            const donneesScores = { high: 0, medium: 0, low: 0 };
+            
+            taches.forEach(tache => {
+                // Répartition par catégorie
+                donneesCategories[tache.categorie] = (donneesCategories[tache.categorie] || 0) + tache.duree;
+                
+                // Évolution par jour
+                donneesJours[tache.jour] = (donneesJours[tache.jour] || 0) + tache.duree;
+                
+                // Répartition des scores
+                if (tache.score >= 10) donneesScores.high += tache.duree;
+                else if (tache.score >= 6) donneesScores.medium += tache.duree;
+                else donneesScores.low += tache.duree;
+            });
+            
+            // Trouver le premier conteneur de graphique
+            const chartContainers = document.querySelectorAll('.chart-container');
+            if (chartContainers.length === 0) return;
+            
+            const chartContainer = chartContainers[0];
+            chartContainer.innerHTML = `
+                <h3>📊 Répartition du temps par catégorie</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    ${Object.entries(donneesCategories).map(([cat, minutes]) => {
+                        const heures = (minutes / 60).toFixed(1);
+                        const percent = taches.length > 0 ? ((minutes / taches.reduce((sum, t) => sum + t.duree, 0)) * 100).toFixed(1) : 0;
+                        return `
+                            <div class="stat-card category-${cat}">
+                                <div class="stat-label">${formatCategorie(cat)}</div>
+                                <div class="stat-value">${heures}h</div>
+                                <div style="font-size: 14px; color: #666;">${percent}%</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                
+                <h3>📈 Répartition par niveau de valeur</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                    <div class="stat-card" style="border-left-color: #28a745;">
+                        <div class="stat-label">HIGH-VALUE (≥10)</div>
+                        <div class="stat-value score-high">${(donneesScores.high / 60).toFixed(1)}h</div>
+                        <div style="font-size: 14px; color: #666;">${taches.length > 0 ? ((donneesScores.high / taches.reduce((sum, t) => sum + t.duree, 0)) * 100).toFixed(1) : 0}%</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #fd7e14;">
+                        <div class="stat-label">MEDIUM-VALUE (6-9)</div>
+                        <div class="stat-value score-medium">${(donneesScores.medium / 60).toFixed(1)}h</div>
+                        <div style="font-size: 14px; color: #666;">${taches.length > 0 ? ((donneesScores.medium / taches.reduce((sum, t) => sum + t.duree, 0)) * 100).toFixed(1) : 0}%</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #dc3545;">
+                        <div class="stat-label">LOW-VALUE (≤5)</div>
+                        <div class="stat-value score-low">${(donneesScores.low / 60).toFixed(1)}h</div>
+                        <div style="font-size: 14px; color: #666;">${taches.length > 0 ? ((donneesScores.low / taches.reduce((sum, t) => sum + t.duree, 0)) * 100).toFixed(1) : 0}%</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function genererSynthese() {
+            // Grouper les tâches similaires
+            const tachesGroupees = {};
+            taches.forEach(tache => {
+                const key = tache.tache.toLowerCase().trim();
+                if (!tachesGroupees[key]) {
+                    tachesGroupees[key] = {
+                        tache: tache.tache,
+                        totalDuree: 0,
+                        scores: [],
+                        categorie: tache.categorie,
+                        occurrences: 0
+                    };
+                }
+                tachesGroupees[key].totalDuree += tache.duree;
+                tachesGroupees[key].scores.push(tache.score);
+                tachesGroupees[key].occurrences++;
+            });
+            
+            // Calculer les moyennes
+            const tachesAvecMoyennes = Object.values(tachesGroupees).map(groupe => ({
+                ...groupe,
+                scoreMoyen: groupe.scores.reduce((sum, s) => sum + s, 0) / groupe.scores.length,
+                tempsParSemaine: (groupe.totalDuree / 5) * 7 // Extrapolation sur 7 jours
+            }));
+            
+            // Trier par score (bas vers haut pour automatisation, haut vers bas pour priorités)
+            const tachesBas = [...tachesAvecMoyennes]
+                .sort((a, b) => a.scoreMoyen - b.scoreMoyen)
+                .slice(0, 10);
+                
+            const tachesHaut = [...tachesAvecMoyennes]
+                .sort((a, b) => b.scoreMoyen - a.scoreMoyen)
+                .slice(0, 5);
+            
+            // Remplir le tableau des tâches à automatiser
+            const tbodyBas = document.querySelector('#top10Bas tbody');
+            tbodyBas.innerHTML = '';
+            tachesBas.forEach((tache, index) => {
+                const recommandation = tache.scoreMoyen <= 5 ? 'Automatisation prioritaire' :
+                                     tache.scoreMoyen <= 7 ? 'Délégation recommandée' :
+                                     'Optimisation process';
+                                     
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${tache.tache}</td>
+                    <td>${Math.round(tache.tempsParSemaine)}min</td>
+                    <td class="score-low">${tache.scoreMoyen.toFixed(1)}</td>
+                    <td>${recommandation}</td>
+                `;
+                tbodyBas.appendChild(tr);
+            });
+            
+            // Remplir le tableau des tâches prioritaires
+            const tbodyHaut = document.querySelector('#top5Haut tbody');
+            tbodyHaut.innerHTML = '';
+            tachesHaut.forEach((tache, index) => {
+                const pourcentageIdeal = index < 2 ? '25-30%' : index < 4 ? '15-20%' : '10-15%';
+                
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${tache.tache}</td>
+                    <td>${Math.round(tache.tempsParSemaine)}min</td>
+                    <td class="score-high">${tache.scoreMoyen.toFixed(1)}</td>
+                    <td>${pourcentageIdeal}</td>
+                `;
+                tbodyHaut.appendChild(tr);
+            });
+            
+            // Calculer les statistiques globales
+            const tempsLowValue = tachesAvecMoyennes
+                .filter(t => t.scoreMoyen <= 5)
+                .reduce((sum, t) => sum + t.tempsParSemaine, 0);
+                
+            const tempsHighValue = tachesAvecMoyennes
+                .filter(t => t.scoreMoyen >= 10)
+                .reduce((sum, t) => sum + t.tempsParSemaine, 0);
+                
+            const potentielGain = tempsLowValue * 0.8; // 80% du temps low-value récupérable
+            
+            // Déterminer le profil dominant
+            const totalMinutes = taches.reduce((sum, t) => sum + t.duree, 0);
+            const minutesProduction = taches.filter(t => t.categorie === 'production').reduce((sum, t) => sum + t.duree, 0);
+            const minutesComm = taches.filter(t => t.categorie === 'communication').reduce((sum, t) => sum + t.duree, 0);
+            const minutesVeille = taches.filter(t => t.categorie === 'veille').reduce((sum, t) => sum + t.duree, 0);
+            const minutesAdmin = taches.filter(t => t.categorie === 'admin').reduce((sum, t) => sum + t.duree, 0);
+            
+            let profilDominant = 'Équilibré';
+            if (minutesProduction / totalMinutes > 0.5) profilDominant = 'Perfectionniste';
+            else if (minutesComm / totalMinutes > 0.4) profilDominant = 'Hyperactif';
+            else if (minutesVeille / totalMinutes > 0.25) profilDominant = 'Stratège Paralysé';
+            else if (minutesAdmin / totalMinutes > 0.3) profilDominant = 'Administrateur Malgré Lui';
+            
+            // Mettre à jour les statistiques
+            document.getElementById('tempsLowValue').textContent = `${Math.round(tempsLowValue)}min`;
+            document.getElementById('tempsHighValue').textContent = `${Math.round(tempsHighValue)}min`;
+            document.getElementById('potentielGain').textContent = `${Math.round(potentielGain)}min`;
+            document.getElementById('profilDominant').textContent = profilDominant;
+        }
+        
+        function demarrerTimer() {
+            if (isTimerRunning) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                alert('⏱️ Timer arrêté');
+                return;
+            }
+            
+            let minutes = 30;
+            let seconds = 0;
+            isTimerRunning = true;
+            
+            timerInterval = setInterval(() => {
+                if (seconds === 0) {
+                    if (minutes === 0) {
+                        clearInterval(timerInterval);
+                        isTimerRunning = false;
+                        alert('🔔 30 minutes écoulées ! Note ta tâche actuelle.');
+                        return;
+                    }
+                    minutes--;
+                    seconds = 59;
+                } else {
+                    seconds--;
+                }
+                
+                const timerDisplay = document.getElementById('currentTime');
+                timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                timerDisplay.style.color = minutes < 5 ? '#dc3545' : '#667eea';
+                
+            }, 1000);
+            
+            alert('⏱️ Timer 30 minutes démarré !');
+        }
+        
+        function exporterDonnees() {
+            const donnees = {
+                taches: taches,
+                dateExport: new Date().toISOString(),
+                statistiques: {
+                    totalTaches: taches.length,
+                    totalTemps: taches.reduce((sum, t) => sum + t.duree, 0),
+                    scoreMoyen: taches.reduce((sum, t) => sum + t.score, 0) / taches.length
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(donnees, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'tracking_5_jours_' + new Date().toISOString().slice(0, 10) + '.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        function importerDonnees(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const donnees = JSON.parse(e.target.result);
+                    if (donnees.taches && Array.isArray(donnees.taches)) {
+                        taches = donnees.taches;
+                        localStorage.setItem('taches', JSON.stringify(taches));
+                        afficherTaches();
+                        mettreAJourStatistiques();
+                        genererGraphiques();
+                        genererSynthese();
+                        alert('✅ Données importées avec succès !');
+                    }
+                } catch (error) {
+                    alert('❌ Erreur lors de l\'importation : fichier invalide');
+                }
+            };
+            reader.readAsText(file);
+        }
+        
+        function reinitialiserDonnees() {
+            if (confirm('⚠️ Êtes-vous sûr de vouloir supprimer TOUTES les données ? Cette action est irréversible.')) {
+                taches = [];
+                localStorage.removeItem('taches');
+                afficherTaches();
+                mettreAJourStatistiques();
+                genererGraphiques();
+                genererSynthese();
+                alert('🔄 Toutes les données ont été supprimées.');
+            }
+        }
+        
+        // Auto-save périodique
+        setInterval(() => {
+            if (taches.length > 0) {
+                localStorage.setItem('taches', JSON.stringify(taches));
+            }
+        }, 30000); // Sauvegarde toutes les 30 secondes
+        
+    </script>
+</body>
+</html>
